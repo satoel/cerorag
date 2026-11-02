@@ -71,6 +71,8 @@ git add backend.tf
   - Deployment branches: solo `main`.
   - Secrets: `R2_STATE_RW_ACCESS_KEY_ID`, `R2_STATE_RW_SECRET_ACCESS_KEY`.
 - **Actions → General:** "Require approval for all outside collaborators" y "Read repository contents" como permiso por defecto de `GITHUB_TOKEN`.
+- **Recién entonces, la variable `TOFU_APPLY_ENABLED` = `true`.** Sin ella el job `apply` no corre. GitHub crea el environment `production` **sin protección** la primera vez que un job lo usa (pasó en el primer push, el 02-nov-2026). Antes de habilitar, verificá que tenga reviewers:
+  `gh api repos/satoel/cerorag/environments/production -q .protection_rules`
 
 Después de esto, **borrar el token de bootstrap** en el dashboard.
 

@@ -124,7 +124,12 @@ jobs:
 
   apply:
     needs: changes
-    if: github.event_name == 'push' && needs.changes.outputs.modules != '[]'
+    # Fail closed: GitHub auto-creates the `production` environment WITHOUT protection rules on
+    # first use, so apply also requires the repo variable TOFU_APPLY_ENABLED=true, set only after
+    # the environment has required reviewers (docs/runbooks/bootstrap-state.md, step 4).
+    if: >-
+      github.event_name == 'push' && needs.changes.outputs.modules != '[]'
+      && vars.TOFU_APPLY_ENABLED == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: production # required reviewer: the owner (docs/runbooks/bootstrap-state.md)
