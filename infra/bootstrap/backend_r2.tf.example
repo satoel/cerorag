@@ -1,0 +1,19 @@
+# Step 2 of docs/runbooks/bootstrap-state.md: after the first apply, copy this file to
+# backend.tf and run `tofu init -migrate-state` to move the local state into R2.
+terraform {
+  backend "s3" {
+    # Admin bucket: CI tokens cannot read it. Use the state_admin_* credentials.
+    bucket = "quimera-tfstate-admin"
+    key    = "bootstrap/terraform.tfstate"
+    region = "auto"
+    # Endpoint from AWS_ENDPOINT_URL_S3; credentials from AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY.
+
+    use_lockfile                = true
+    use_path_style              = true
+    skip_credentials_validation = true
+    skip_region_validation      = true
+    skip_requesting_account_id  = true
+    skip_metadata_api_check     = true
+    skip_s3_checksum            = true
+  }
+}

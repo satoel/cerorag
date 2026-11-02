@@ -1,0 +1,166 @@
+# OpenTofu plan/apply against remote state in R2.
+# - PR (same repo only, never forks): plan with READ-ONLY state credentials, -lock=false.
+# - Push to main: apply behind the `production` environment (manual approval by the owner).
+# infra/bootstrap is never applied from CI (see docs/runbooks/bootstrap-state.md).
+#
+# Public repo: Actions logs and PR comments are world-readable, so full plan/apply output is
+# never printed. Only "<actions> <address>" lines are shown; review details locally.
+name: tofu
+
+on:
+  pull_request:
+    paths: ["infra/**"]
+  push:
+    branches: [main]
+    paths: ["infra/**"]
+
+permissions:
+  contents: read
+
+env:
+  TOFU_VERSION: 1.13.2
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+jobs:
+  changes:
+    # Forks never receive secrets; skip them explicitly as well.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      modules: ${{ steps.diff.outputs.modules }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: diff
+        env:
+          BASE: ${{ github.event_name == 'push' && github.event.before || github.event.pull_request.base.sha }}
+          HEAD: ${{ github.sha }}
+        run: |
+          # First push (before=000…) or force-push whose old SHA is gone: diff against the
+          # empty tree, so every module is considered changed (apply still needs approval).
+          if [ -z "$BASE" ] || ! git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
+            BASE="$(git hash-object -t tree /dev/null)"
+          fi
+          modules='[]'
+          for m in $(git diff --name-only "$BASE" "$HEAD" -- infra | awk -F/ 'NF>2 {print $2}' | sort -u); do
+            if [ "$m" != bootstrap ] && [ -d "infra/$m" ]; then
+              modules="$(jq -c --arg m "$m" '. + [$m]' <<<"$modules")"
+            fi
+          done
+          echo "modules=$modules" >> "$GITHUB_OUTPUT"
+          echo "changed modules: $modules"
+
+  plan:
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.modules != '[]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJSON(needs.changes.outputs.modules) }}
+    concurrency:
+      group: tofu-plan-${{ matrix.module }}-${{ github.ref }}
+      cancel-in-progress: true
+    env:
+      AWS_ENDPOINT_URL_S3: ${{ vars.R2_STATE_ENDPOINT }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_STATE_RO_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_STATE_RO_SECRET_ACCESS_KEY }}
+      TF_VAR_state_passphrase: ${{ secrets.TF_STATE_PASSPHRASE }}
+    defaults:
+      run:
+        working-directory: infra/${{ matrix.module }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+      - name: init
+        run: |
+          tofu init -no-color -lockfile=readonly > "$RUNNER_TEMP/init.log" 2>&1 || { grep -oE 'Error: .*' "$RUNNER_TEMP/init.log" | cut -c1-200 | head -10; exit 1; }
+      - name: plan (summary only)
+        # Read-only state token cannot write the lock object, hence -lock=false.
+        run: |
+          ec=0
+          tofu plan -lock=false -no-color -detailed-exitcode -out="$RUNNER_TEMP/tfplan" > "$RUNNER_TEMP/plan.log" 2>&1 || ec=$?
+          if [ "$ec" -eq 1 ]; then grep -oE 'Error: .*' "$RUNNER_TEMP/plan.log" | cut -c1-200 | head -10; exit 1; fi
+          tofu show -json "$RUNNER_TEMP/tfplan" \
+            | jq -r '.resource_changes[]? | select(.change.actions != ["no-op"]) | "\(.change.actions | join(",")) \(.address)"' \
+            > "$RUNNER_TEMP/summary.txt"
+          [ -s "$RUNNER_TEMP/summary.txt" ] || echo "no changes" > "$RUNNER_TEMP/summary.txt"
+          cat "$RUNNER_TEMP/summary.txt"
+      - name: Comment summary on PR (one comment per module, updated in place)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          MODULE: ${{ matrix.module }}
+        run: |
+          marker="<!-- tofu-plan:$MODULE -->"
+          {
+            echo "$marker"
+            echo "### tofu plan · \`infra/$MODULE\`"
+            echo '```'
+            head -c 20000 "$RUNNER_TEMP/summary.txt"
+            echo '```'
+            echo 'Solo acciones y direcciones (repo público). Detalle: `tofu plan` en local.'
+          } > "$RUNNER_TEMP/comment.md"
+          id="$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marker\"))) | .id" | head -1)"
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F "body=@$RUNNER_TEMP/comment.md" > /dev/null
+          else
+            gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/comment.md"
+          fi
+
+  apply:
+    needs: changes
+    if: github.event_name == 'push' && needs.changes.outputs.modules != '[]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: production # required reviewer: the owner (docs/runbooks/bootstrap-state.md)
+    strategy:
+      fail-fast: true
+      max-parallel: 1
+      matrix:
+        module: ${{ fromJSON(needs.changes.outputs.modules) }}
+    concurrency:
+      group: tofu-apply-${{ matrix.module }}
+      cancel-in-progress: false
+    env:
+      AWS_ENDPOINT_URL_S3: ${{ vars.R2_STATE_ENDPOINT }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_STATE_RW_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_STATE_RW_SECRET_ACCESS_KEY }}
+      TF_VAR_state_passphrase: ${{ secrets.TF_STATE_PASSPHRASE }}
+    defaults:
+      run:
+        working-directory: infra/${{ matrix.module }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+      - name: init
+        run: |
+          tofu init -no-color -lockfile=readonly > "$RUNNER_TEMP/init.log" 2>&1 || { grep -oE 'Error: .*' "$RUNNER_TEMP/init.log" | cut -c1-200 | head -10; exit 1; }
+      - name: plan (summary only)
+        run: |
+          tofu plan -no-color -out="$RUNNER_TEMP/tfplan" > "$RUNNER_TEMP/plan.log" 2>&1 || { grep -oE 'Error: .*' "$RUNNER_TEMP/plan.log" | cut -c1-200 | head -10; exit 1; }
+          tofu show -json "$RUNNER_TEMP/tfplan" \
+            | jq -r '.resource_changes[]? | select(.change.actions != ["no-op"]) | "\(.change.actions | join(",")) \(.address)"'
+      - name: apply (summary only)
+        run: |
+          tofu apply -no-color "$RUNNER_TEMP/tfplan" > "$RUNNER_TEMP/apply.log" 2>&1 || { grep -oE 'Error: .*' "$RUNNER_TEMP/apply.log" | cut -c1-200 | head -10; exit 1; }
+          grep -E '^Apply complete!' "$RUNNER_TEMP/apply.log"

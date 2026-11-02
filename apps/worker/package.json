@@ -1,0 +1,17 @@
+{
+  "name": "quimera-workers",
+  "private": true,
+  "workspaces": [
+    "quota-monitor"
+  ],
+  "scripts": {
+    "test": "npm test --workspaces",
+    "typecheck": "npm run typecheck --workspaces"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261101.1",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5",
+    "wrangler": "4.156.1"
+  }
+}

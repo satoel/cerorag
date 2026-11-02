@@ -1,0 +1,44 @@
+# Secrets: never commit (see CLAUDE.md)
+.env
+.env.*
+*.pem
+*.key
+*.p12
+credentials*.json
+backend.hcl
+
+# OpenTofu
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Node / Workers
+node_modules/
+.wrangler/
+dist/
+coverage/
+.dev.vars*
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
