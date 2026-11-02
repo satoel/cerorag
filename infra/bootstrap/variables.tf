@@ -22,7 +22,7 @@ variable "account_id" {
 variable "state_bucket_name" {
   description = "Name of the R2 bucket holding OpenTofu state."
   type        = string
-  default     = "quimera-tfstate"
+  default     = "cerorag-tfstate"
 }
 
 variable "state_bucket_location" {

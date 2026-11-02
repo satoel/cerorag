@@ -1,7 +1,7 @@
-# Quimera
+# CeroRAG
 
 Plataforma RAG con agentes, multi-cloud, armada solo con free tiers. Uso personal y no comercial.
-La especificación completa está en `docs/quimera-spec.md`: leela antes de proponer o cambiar arquitectura.
+La especificación completa está en `docs/cerorag-spec.md`: leela antes de proponer o cambiar arquitectura.
 Los ids de las piezas (`cf-worker`, `api`, `litellm`, etc.) son los de la sección 2 de la spec; usalos en planes, commits y docs.
 
 ## Reglas

@@ -1,6 +1,6 @@
-# Quimera Multi-Cloud — Especificación de arquitectura
+# CeroRAG — Especificación de arquitectura
 
-> Exportada del artifact "Quimera Multi-Cloud" (revisión 30-oct-2026). Arquitectura hipotética de **uso personal y no comercial** armada solo con free tiers. Los cupos se verificaron entre julio y octubre de 2026: **revisar cada uno contra la documentación oficial antes de crear la cuenta o el recurso.**
+> Exportada del artifact "Quimera Multi-Cloud", nombre anterior del proyecto (revisión 30-oct-2026). Arquitectura hipotética de **uso personal y no comercial** armada solo con free tiers. Los cupos se verificaron entre julio y octubre de 2026: **revisar cada uno contra la documentación oficial antes de crear la cuenta o el recurso.**
 
 ## 1. Objetivo y principios
 
@@ -52,7 +52,7 @@ Dos nodos A1 de OKE: **a1-0** (plataforma, 1 OCPU · 6 GB, ≈3,5 GB en uso) y *
 | `kyverno` | Kyverno — nodo a1-0 | CNCF | Open source, corre dentro de OKE sin costo. | Política de admisión: solo entran imágenes firmadas con cosign por el workflow del repo. |  |
 | `alloy0` | Alloy — nodo a1-0 | Grafana · open source | Open source, corre dentro de OKE sin costo. | Agente OpenTelemetry del nodo de plataforma: métricas, logs y trazas hacia Grafana Cloud. |  |
 | `cron` | CronJobs — nodo a1-0 | Kubernetes | Open source, corre dentro de OKE sin costo. | Trabajos nocturnos: Kafka → Parquet → GCS, volcado del grafo y reindexado de Qdrant. |  |
-| `n8n` | n8n — nodo a1-0 | n8n · fair-code | Self-hosted dentro de OKE. | Automatizaciones: ingesta por mail y avisos a Telegram. Su base está en Aiven PostgreSQL. | Licencia fair-code: sin problema para uso propio; revisala si Quimera se vuelve producto. |
+| `n8n` | n8n — nodo a1-0 | n8n · fair-code | Self-hosted dentro de OKE. | Automatizaciones: ingesta por mail y avisos a Telegram. Su base está en Aiven PostgreSQL. | Licencia fair-code: sin problema para uso propio; revisala si CeroRAG se vuelve producto. |
 | `api` | API — nodo a1-1 | FastAPI | Open source, corre dentro de OKE sin costo. | Orquesta la recuperación híbrida (Qdrant + BM25 + grafo), arma el prompt, llama a LiteLLM y guarda el historial. |  |
 | `litellm` | LiteLLM — nodo a1-1 | BerriAI · open source | Open source, corre dentro de OKE sin costo. | Gateway compatible con la API de OpenAI. Política: sensible → Ollama; el resto → Groq → Gemini → OpenRouter; lotes → Mistral. Respeta RPM, RPD y tokens de cada proveedor. |  |
 | `ollama` | Ollama — nodo a1-1 | Ollama · open source | Open source, corre dentro de OKE sin costo. | Modelo local de 3–4B en Q4 (~3 GB de RAM) y modelo de embeddings. Lento con 1 OCPU, pero privado y siempre disponible. |  |
@@ -74,7 +74,7 @@ Dos nodos A1 de OKE: **a1-0** (plataforma, 1 OCPU · 6 GB, ≈3,5 GB en uso) y *
 | id | Pieza | Proveedor | Cupo gratis | Rol | Riesgo |
 | --- | --- | --- | --- | --- | --- |
 | `gcp-vm` | e2-micro · GCP (us-east1 · sondas) | Google Cloud | 1 e2-micro en us-west1, us-central1 o us-east1, con 30 GB de disco estándar. | Sondas externas (Gatus y blackbox exporter) contra los endpoints públicos: ve lo mismo que un usuario, desde otra nube. | Solo 1 GB/mes de egress gratis (~33 MB por día): sondas cada 5 minutos y pocas series. |
-| `tailscale` | Tailscale (Personal · 6 usuarios) | Tailscale | Plan Personal gratis: 6 usuarios, dispositivos de usuario ilimitados y 50 recursos con tag. | Malla WireGuard entre tus equipos, Micro A y la VM de GCP. | Solo uso no comercial. Si Quimera factura: Headscale en Micro A. |
+| `tailscale` | Tailscale (Personal · 6 usuarios) | Tailscale | Plan Personal gratis: 6 usuarios, dispositivos de usuario ilimitados y 50 recursos con tag. | Malla WireGuard entre tus equipos, Micro A y la VM de GCP. | Solo uso no comercial. Si CeroRAG factura: Headscale en Micro A. |
 
 ### Datos · todo se reconstruye desde R2 + Autonomous DB
 
@@ -248,7 +248,7 @@ Sin puertos abiertos, sin secretos en git y sin endpoints de administración pú
 
 ## 4. Presupuesto de cupos
 
-Cada límite gratis traducido a lo que significa para Quimera. Las filas marcadas como estimación son cálculos propios, no cifras del proveedor.
+Cada límite gratis traducido a lo que significa para CeroRAG. Las filas marcadas como estimación son cálculos propios, no cifras del proveedor.
 
 | Recurso | Cupo gratis | Qué significa acá |
 | --- | --- | --- |
@@ -277,7 +277,7 @@ Lo que separa “gratis y prolijo” de “cuenta suspendida”.
 3. **GitHub Actions es CI/CD.** Ni cron de la aplicación, ni backend serverless, ni CDN, ni minería.
 4. **Colab es un notebook interactivo.** El fine-tuning lo corrés vos, a mano. En free, nada de SSH, UIs web ni servir modelos.
 5. **Gemini free y Mistral Experiment usan tus datos.** Solo documentos públicos. Prohibido entrenar un modelo competidor con salidas de Gemini: el LoRA sale de datos propios o abiertos. Usuarios en UE, Reino Unido o Suiza: solo Gemini pago.
-6. **No comercial.** Tailscale Personal es para uso no comercial, igual que Vercel Hobby (por eso no está). Si Quimera factura: Headscale en Micro A y revisar cada plan.
+6. **No comercial.** Tailscale Personal es para uso no comercial, igual que Vercel Hobby (por eso no está). Si CeroRAG factura: Headscale en Micro A y revisar cada plan.
 7. **Repo público, cero secretos en git.** Todo vive en OpenBao con auto-unseal en OCI Vault.
 8. **Free no es producción.** Aiven lo aclara y puede mover el servicio de nube; ningún plan gratis trae SLA.
 

@@ -2,7 +2,7 @@
   // Deployed only with explicit OK (CLAUDE.md). Secrets via `wrangler secret put`:
   //   CF_ACCOUNT_ID, CF_ANALYTICS_TOKEN (Account Analytics Read, from infra/bootstrap),
   //   optional TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID.
-  "name": "quimera-quota-monitor",
+  "name": "cerorag-quota-monitor",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-01",
   // No public HTTP surface: cron only.
@@ -13,7 +13,7 @@
     "crons": ["17 * * * *"]
   },
   "kv_namespaces": [
-    // Fill in the id after `wrangler kv namespace create quimera-guard` (ids are not secret).
+    // Fill in the id after `wrangler kv namespace create cerorag-guard` (ids are not secret).
     { "binding": "GUARD", "id": "REPLACE_WITH_KV_NAMESPACE_ID" }
   ],
   "observability": { "enabled": true }

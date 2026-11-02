@@ -2,7 +2,7 @@
 # AWS_SECRET_ACCESS_KEY (R2 token id / SHA-256 of token value). See docs/runbooks/bootstrap-state.md.
 terraform {
   backend "s3" {
-    bucket = "quimera-tfstate"
+    bucket = "cerorag-tfstate"
     key    = "oci/terraform.tfstate"
     region = "auto"
 

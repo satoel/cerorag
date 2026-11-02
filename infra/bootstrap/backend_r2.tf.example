@@ -3,7 +3,7 @@
 terraform {
   backend "s3" {
     # Admin bucket: CI tokens cannot read it. Use the state_admin_* credentials.
-    bucket = "quimera-tfstate-admin"
+    bucket = "cerorag-tfstate-admin"
     key    = "bootstrap/terraform.tfstate"
     region = "auto"
     # Endpoint from AWS_ENDPOINT_URL_S3; credentials from AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY.

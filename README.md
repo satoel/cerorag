@@ -1,11 +1,11 @@
-# Quimera
+# CeroRAG
 
 **Plataforma para construir, entrenar y operar agentes RAG gratis**, repartida en los free tiers de 21 proveedores y 5 nubes, con un costo objetivo de **USD 0/mes**. Es un proyecto personal, no comercial, pensado para hasta 50 personas.
 
 > [!IMPORTANT]
 > **Estado: fase F0** (repo, CI y estado remoto). La mayoría de las funciones descritas abajo están **diseñadas pero todavía no construidas**. Ver [Estado y pendientes](#estado-y-pendientes).
 
-- Especificación completa: [`docs/quimera-spec.md`](docs/quimera-spec.md)
+- Especificación completa: [`docs/cerorag-spec.md`](docs/cerorag-spec.md)
 - Cupos verificados y presupuestos internos: [`docs/quotas.md`](docs/quotas.md)
 - Decisiones: [`docs/decisions/`](docs/decisions/) · Runbooks: [`docs/runbooks/`](docs/runbooks/) · Reglas del proyecto: [`CLAUDE.md`](CLAUDE.md)
 
@@ -124,7 +124,7 @@ flowchart LR
 4. Arma el prompt y LiteLLM lo envía al modelo según la sensibilidad y el cupo disponible.
 5. La respuesta sale con citas y se guarda en el historial.
 
-El detalle de los 63 componentes, los flujos, los cupos y qué falla primero está en la [especificación](docs/quimera-spec.md).
+El detalle de los 63 componentes, los flujos, los cupos y qué falla primero está en la [especificación](docs/cerorag-spec.md).
 
 ## Quickstart
 
@@ -138,7 +138,7 @@ El detalle de los 63 componentes, los flujos, los cupos y qué falla primero est
 **1. Validar en local.** No crea nada ni pide credenciales.
 
 ```sh
-git clone <url-del-repo> quimera && cd quimera
+git clone https://github.com/satoel/cerorag.git && cd cerorag
 tofu fmt -check -recursive
 for m in infra/*/; do (cd "$m" && tofu init -backend=false -input=false && tofu validate); done
 tflint --recursive --config "$PWD/.tflint.hcl"
@@ -164,7 +164,7 @@ tofu init && tofu plan -out=tfplan && tofu apply tfplan
 ```sh
 cd apps/worker/quota-monitor
 npx wrangler login
-npx wrangler kv namespace create quimera-guard   # pegar el id en wrangler.jsonc
+npx wrangler kv namespace create cerorag-guard   # pegar el id en wrangler.jsonc
 npx wrangler secret put CF_ACCOUNT_ID
 npx wrangler secret put CF_ANALYTICS_TOKEN       # = tofu output -raw quota_monitor_token (infra/bootstrap)
 npx wrangler deploy

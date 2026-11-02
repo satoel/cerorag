@@ -13,7 +13,7 @@ La spec pone el estado remoto en R2 con backend S3 y `apply` automático al merg
 1. **Backend S3 → R2**, con lock nativo (`use_lockfile`, que usa escrituras condicionales soportadas por R2). Una clave por módulo: `<modulo>/terraform.tfstate`. El endpoint viene de `AWS_ENDPOINT_URL_S3`, así que el account id no está en el código.
 2. **Cifrado client-side del estado y del plan** (pbkdf2 + aes_gcm, `enforced = true`). El estado contiene secretos (tokens, contraseñas de base).
 3. **Bootstrap en `infra/bootstrap`**, con estado local cifrado que después se migra a R2. Lo aplica el dueño en local, nunca CI, porque necesita un token con permiso para crear tokens.
-   - Su estado va a un bucket aparte, `quimera-tfstate-admin`, con su propio token y su propia passphrase, ninguno de los cuales está en GitHub.
+   - Su estado va a un bucket aparte, `cerorag-tfstate-admin`, con su propio token y su propia passphrase, ninguno de los cuales está en GitHub.
    - Motivo: ese estado contiene el token rw. Si estuviera en el bucket de módulos, un plan de PR con el token ro más la passphrase podría leerlo y escalar a rw (lo encontró el code-review).
 4. **Repo público:** los logs de Actions y los comentarios de PR son públicos. CI nunca imprime el plan ni el apply completos, solo líneas `acción dirección`.
 5. **Tokens acotados al bucket:**

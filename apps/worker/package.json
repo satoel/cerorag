@@ -1,5 +1,5 @@
 {
-  "name": "quimera-workers",
+  "name": "cerorag-workers",
   "private": true,
   "workspaces": [
     "quota-monitor"

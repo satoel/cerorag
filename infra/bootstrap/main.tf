@@ -100,7 +100,7 @@ data "cloudflare_account_api_token_permission_groups_list" "analytics_read" {
 # Read-only analytics for apps/worker/quota-monitor (R2 usage via GraphQL). Nothing else.
 resource "cloudflare_account_token" "quota_monitor" {
   account_id = var.account_id
-  name       = "quimera-quota-monitor"
+  name       = "cerorag-quota-monitor"
 
   policies = [{
     effect            = "allow"
@@ -112,7 +112,7 @@ resource "cloudflare_account_token" "quota_monitor" {
 # Admin bucket only (bootstrap state). Lives in your password manager, never in GitHub.
 resource "cloudflare_account_token" "state_admin" {
   account_id = var.account_id
-  name       = "quimera-tfstate-admin"
+  name       = "cerorag-tfstate-admin"
 
   policies = [{
     effect            = "allow"
@@ -124,7 +124,7 @@ resource "cloudflare_account_token" "state_admin" {
 # Read/write on the module state bucket only: local admin and the approved `apply` job.
 resource "cloudflare_account_token" "state_rw" {
   account_id = var.account_id
-  name       = "quimera-tfstate-rw"
+  name       = "cerorag-tfstate-rw"
 
   policies = [{
     effect            = "allow"
@@ -136,7 +136,7 @@ resource "cloudflare_account_token" "state_rw" {
 # Read-only on the state bucket: PR `plan` jobs (run with -lock=false, never on forks).
 resource "cloudflare_account_token" "state_ro" {
   account_id = var.account_id
-  name       = "quimera-tfstate-ro"
+  name       = "cerorag-tfstate-ro"
 
   policies = [{
     effect            = "allow"

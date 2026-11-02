@@ -1,6 +1,6 @@
 # Cupos verificados
 
-Cada cupo se verifica contra la documentación oficial **antes** de usar la pieza y se anota acá con fecha y link. Si difiere de la spec (`docs/quimera-spec.md`), se marca y se avisa antes de ajustar nada.
+Cada cupo se verifica contra la documentación oficial **antes** de usar la pieza y se anota acá con fecha y link. Si difiere de la spec (`docs/cerorag-spec.md`), se marca y se avisa antes de ajustar nada.
 
 ## Regla dura: cero cargos en la tarjeta
 

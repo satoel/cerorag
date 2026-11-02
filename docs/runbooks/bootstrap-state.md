@@ -1,6 +1,6 @@
 # Runbook: bootstrap del estado de OpenTofu en R2
 
-Crea el bucket `quimera-tfstate`, sus tokens y el token de analytics del `quota-monitor`. Después migra el estado del propio bootstrap a R2.
+Crea el bucket `cerorag-tfstate`, sus tokens y el token de analytics del `quota-monitor`. Después migra el estado del propio bootstrap a R2.
 
 **Cada paso que crea algo requiere OK explícito en el chat (CLAUDE.md).**
 
@@ -13,7 +13,7 @@ Crea el bucket `quimera-tfstate`, sus tokens y el token de analytics del `quota-
 3. **Dos passphrases de cifrado:** cada una de al menos 16 caracteres, generadas con `openssl rand -base64 32`.
    - **Admin:** solo para `infra/bootstrap`. Nunca va a GitHub.
    - **Módulos:** para los demás módulos. Va al secret `TF_STATE_PASSPHRASE`.
-   - **Por qué dos:** el estado del bootstrap tiene el token rw y vive en el bucket `quimera-tfstate-admin`, al que los tokens de CI no llegan. Aunque un plan de PR filtrara la passphrase de módulos, no podría leer ese estado.
+   - **Por qué dos:** el estado del bootstrap tiene el token rw y vive en el bucket `cerorag-tfstate-admin`, al que los tokens de CI no llegan. Aunque un plan de PR filtrara la passphrase de módulos, no podría leer ese estado.
    - Guardarla en tu gestor de contraseñas **y** en una copia offline.
    - **Si se pierde, se pierde el estado.** No hay recuperación.
    - Cuando OpenBao exista (F6), se copia ahí.
@@ -40,7 +40,7 @@ El `terraform.tfstate` local queda cifrado con AES-GCM. No entra a git porque `.
 ## 2. Migrar el estado del bootstrap a R2
 
 ```sh
-cp backend_r2.tf.example backend.tf        # bucket quimera-tfstate-admin
+cp backend_r2.tf.example backend.tf        # bucket cerorag-tfstate-admin
 export AWS_ENDPOINT_URL_S3="$(tofu output -raw state_endpoint)"
 export AWS_ACCESS_KEY_ID="$(tofu output -raw state_admin_access_key_id)"
 export AWS_SECRET_ACCESS_KEY="$(tofu output -raw state_admin_secret_access_key)"
@@ -79,7 +79,7 @@ Después de esto, **borrar el token de bootstrap** en el dashboard.
 ```sh
 cd apps/worker/quota-monitor
 npx wrangler login
-npx wrangler kv namespace create quimera-guard   # pegar el id en wrangler.jsonc
+npx wrangler kv namespace create cerorag-guard   # pegar el id en wrangler.jsonc
 echo -n "$TF_VAR_account_id" | npx wrangler secret put CF_ACCOUNT_ID
 (cd ../../../infra/bootstrap && tofu output -raw quota_monitor_token) | npx wrangler secret put CF_ANALYTICS_TOKEN
 # Opcional, cuando exista el bot: TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID
