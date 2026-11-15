@@ -14,7 +14,7 @@
   },
   "kv_namespaces": [
     // Fill in the id after `wrangler kv namespace create cerorag-guard` (ids are not secret).
-    { "binding": "GUARD", "id": "REPLACE_WITH_KV_NAMESPACE_ID" }
+    { "binding": "GUARD", "id": "dd04808a57f0425d9c8c10619a26e6fc" }
   ],
   "observability": { "enabled": true }
 }
